@@ -1,6 +1,7 @@
 import os
 from flask_sqlalchemy import SQLAlchemy
-from flask import (Flask, render_template)
+from flask import (jsonify, request, Response, abort, Flask, render_template)
+import json
 
 app = Flask(__name__, template_folder="templates")
 app.config.from_object(os.environ['APP_SETTINGS'])
@@ -14,11 +15,27 @@ def home():
     """
     index response
     """
-    return render_template('home.html')
+    charList = Char.query.all()
+    return render_template('home.html', charList=charList)
 
 @app.route('/chars')
 def chars():
     return 'here are all the chars i know about'
+
+@app.route('/char', methods=['GET','POST'])
+def char():
+    if request.method == 'POST':
+        if request.is_json:
+            req = request.get_json()
+            charList = req["charList"]
+            for char in charList:
+                newChar = Char(char["charName"], char["lastUpdate"])
+                db.session.add(newChar)
+            db.session.commit()
+            return Response(status=200)
+        else:
+            abort(400)
+        
 
 @app.route('/char/<int:charId>')
 def show_char(charId):

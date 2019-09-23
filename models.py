@@ -10,10 +10,12 @@ class Char(db.Model):
     guild = db.Column(db.String(50))
     last_update = db.Column(db.DateTime)
 
-    def __init__(self, url, result_all, result_no_stop_words):
-        self.url = url
-        self.result_all = result_all
-        self.result_no_stop_words = result_no_stop_words
+    def __init__(self, char_name, last_update, char_class = "", item_level = 0, guild = ""):
+        self.char_name = char_name
+        self.char_class = char_class
+        self.item_level = item_level
+        self.guild = guild
+        self.last_update = last_update
 
     def __repr__(self):
-        return '<id {}>'.format(self.id)
+        return 'Character: %s' % self.char_name
