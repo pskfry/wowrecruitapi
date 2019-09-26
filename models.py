@@ -1,5 +1,4 @@
 from app import db
-from sqlalchemy.dialects.postgresql import JSON
 
 class Char(db.Model):
     __tablename__ = 'characters'
@@ -16,6 +15,3 @@ class Char(db.Model):
         self.item_level = item_level
         self.guild = guild
         self.last_update = last_update
-
-    def __repr__(self):
-        return 'Character: %s' % self.char_name
