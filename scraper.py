@@ -43,9 +43,9 @@ def get_tds_from_row(row_text):
 
     return fields
 
-def scrape():
+def scrape(arg_min_ilvl):
     new_scrape = Scrape(datetime.now())
-    new_scrape.min_ilvl = 450.0
+    new_scrape.min_ilvl = arg_min_ilvl
 
     min_item_level_found = False
     no_next_url = False
@@ -54,7 +54,7 @@ def scrape():
     next_url = 'https://www.wowprogress.com/gearscore/us?lfg=1'
     pages_scraped = 0
 
-    print("New scrape started @ %s" % datetime.now())
+    print(f'New scrape started @ {datetime.now()} with minimum item level set to {new_scrape.min_ilvl}')
 
     while not min_item_level_found and not no_next_url:
         # get the html data
@@ -103,10 +103,6 @@ def scrape():
     print("Scrape end @ %s" % datetime.now())
     print("%s pages scraped" % pages_scraped)
 
-    # build new chars json for api request
-    add_chars_json = {'char_list': []}
-    add_chars_json['char_list'].extend([char.__dict__ for char in char_list])
-
     # set api url
     api_url = os.environ.get("API_URL")
 
@@ -115,14 +111,12 @@ def scrape():
     password = os.environ.get("SCRAPER_PASSWORD")
     login = {"user_name": username, "password": password}
     login_json = json.dumps(login)
-    print(api_url)
 
     # get token
     try:
         headers = {"Content-Type": "application/json"}
         resp = requests.post(url=api_url+"/login", data=login_json, headers=headers)
-
-        response.raise_for_status()
+        resp.raise_for_status()
 
     except HTTPError as http_err:
         print(f'Http error occurred on login: {http_err}')
@@ -135,6 +129,7 @@ def scrape():
     else:
         resp_data = resp.json()
         jwt_token = resp_data["access_token"]
+        print("Successfully logged in to API!")
 
     new_scrape.pages_scraped = pages_scraped
     new_scrape.scrape_end = datetime.now()
@@ -143,9 +138,13 @@ def scrape():
     # add token to headers
     headers['Authorization'] = 'Bearer ' + jwt_token
 
+    # generate char list json
+    add_chars_json = {"char_list": []}
+    add_chars_json["char_list"].extend([vars(char) for char in char_list])
+
     # try post chars
     try:
-        resp = requests.post(url=api_url+"/char", data=add_chars_json, headers=headers)
+        resp = requests.post(url=api_url+"/char", data=json.dumps(add_chars_json), headers=headers)
         resp.raise_for_status()
 
     except HTTPError as http_err:
@@ -154,5 +153,11 @@ def scrape():
     except Exception as err:
         print(f'Other error occurred on chars post: {err}')
 
+    else:
+        print(f'Successfully posted {len(char_list)} new chars')
+
+    # try post to scrape log
     resp = new_scrape.post_to_api(url=api_url, headers=headers)
-    print("New scrape post response: %s" % resp.status_code)
+
+    if (resp):
+        print('Successfully logged new scrape!')

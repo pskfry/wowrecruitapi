@@ -48,18 +48,17 @@ def char():
     if request.method == 'POST':
         try:
             req = request.get_json()
-            print(req, file=sys.stderr)
             char_list = req["char_list"]
 
             Char.query.delete()
 
             for char in char_list:
-                new_char = Char(char["char_name"], char["last_updated"], char["char_class"], char["item_level"], char["guild"])
+                new_char = Char(char["char_name"], char["last_update"], char["char_class"], char["item_level"], char["guild"])
                 db.session.add(new_char)
 
             new_row_count = Char.query.count()
 
-            if new_row_count > 25:
+            if new_row_count > 1:
                 db.session.commit()
                 return Response(status=200)
             else:
@@ -78,7 +77,6 @@ def scrape_log():
 
     if request.method == 'POST':
         try:
-            print("hi")
             req = request.get_json()
             new_scrape = Scrape(
                 req["scrape_start"], req["scrape_end"], req["char_count"], 

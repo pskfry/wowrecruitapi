@@ -1,5 +1,6 @@
 from datetime import datetime
 import requests
+from urllib.error import HTTPError
 import json
 import re
 from dateutil.parser import parse
@@ -12,12 +13,23 @@ class Scrape:
         self.min_ilvl = 0.0
         self.pages_scraped = 0
 
-    @classmethod
     def post_to_api(self, url, headers):
-        headers = {"Content-Type": "application/json"}
-        scrape_json = json.dumps(self.__dict__,default=str)
+        try:
+            scrape_json = json.dumps(vars(self),default=str)
 
-        return requests.post(url=url+"/scrapelog", json=scrape_json, headers=headers)
+            resp = requests.post(url=url+"/scrapelog", data=scrape_json, headers=headers)
+            resp.raise_for_status()
+
+        except HTTPError as http_err:
+            print(f'Http error occurred on scrapelog post: {http_err}')
+            return
+
+        except Exception as err:
+            print(f'Other error occurred on scrapelog post: {err}')
+            return
+        
+        else:
+            return resp
 
 
 
@@ -48,8 +60,6 @@ class ScrapedChar:
                     self.realm_name = m.group('SERVER')
                 else:
                     self.realm_name = ''
-
-                    
             if id == 4:
                 # parse ilvl column
                 p = re.compile(r'<td[^>]*>(?P<ILVL>[^<]*)')
@@ -64,9 +74,9 @@ class ScrapedChar:
                     r'<td[^>].*?<span[^>]*label="(?P<LASTUPDATED>[^"]*)')
                 m = p.search(repr(td))
                 if m:
-                    last_updated = m.group('LASTUPDATED')
-                    last_updated_pydate = parse(last_updated)
-                    self.last_updated = last_updated_pydate.strftime(
+                    last_update = m.group('LASTUPDATED')
+                    last_update_pydate = parse(last_update)
+                    self.last_update = last_update_pydate.strftime(
                         "%m-%d-%Y %H:%M:%S")
                 else:
-                    self.last_updated = ''
+                    self.last_update = ''
