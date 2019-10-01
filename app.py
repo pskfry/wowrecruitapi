@@ -78,6 +78,7 @@ def scrape_log():
 
     if request.method == 'POST':
         try:
+            print("hi")
             req = request.get_json()
             new_scrape = Scrape(
                 req["scrape_start"], req["scrape_end"], req["char_count"], 
